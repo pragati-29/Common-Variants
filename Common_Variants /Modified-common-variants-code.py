@@ -37,12 +37,21 @@ for file_g in folder_germ:
     if not any(file.startswith(prefix) for file in folder_anno) or not any(file.startswith(prefix) for file in folder_som):
         raise FileNotFoundError(f"Sample not found in all folders: {prefix}")
 # Comparing the somatic and germline files
-for file_g, file_s, file_an in zip_longest(folder_germ, folder_som, folder_anno):
-    file_g_parts = file_g.split('-')
-    command1 = f"bcftools index -t {som_path}/{file_s}"
-    print(command1)
-    subprocess.run(command1, shell=True, check=True)
-    if file_g_parts[0] in file_s and file_s.endswith("vcf.gz"):
-        os.makedirs(file_g_parts[0], exist_ok=True)
-        command2 = f"bcftools isec -n +2 {os.path.join(germ_path,file_g)} {os.path.join(som_path,file_s)} | bgzip -c > {output_base_dir}/{file_g_parts[0]}/{file_g}-{file_s}-compare.vcf.gz"
-        subprocess.run(command2, shell=True,check=True)  
+try:
+    for file_s, file_an in zip_longest(folder_som, folder_anno):
+        file_s_parts = file_s.split('-')
+        if file_s.endswith('vcf.gz'):
+            command1 = f"bcftools index -tf {som_path}/{file_s}"
+            subprocess.run(command1, shell=True, check=True)
+        
+        for file_g in folder_germ:
+            if file_g.endswith('vcf.gz'):
+                command2 = f"bcftools index -tf {germ_path}/{file_g}"
+                subprocess.run(command2, shell=True, check=True)
+            
+            if file_s_parts[0] in file_g and file_s.endswith("vcf.gz") and file_g.endswith("vcf.gz"):
+                os.makedirs(os.path.join(output_base_dir, file_s_parts[0]), exist_ok=True)
+                command3 = f"bcftools isec -n +2 {os.path.join(germ_path, file_g)} {os.path.join(som_path, file_s)} | bgzip -c > {output_base_dir}/{file_s_parts[0]}/{file_g.split('.')[0]}-{file_s.split('.')[0]}-compare.vcf.gz"
+                subprocess.run(command3, shell=True, check=True)
+except subprocess.CalledProcessError as e:
+    print(f"An error occurred: {e}")
