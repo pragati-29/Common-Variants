@@ -11,4 +11,19 @@ This script automates the analysis of common variants using the vcf files (*.vcf
   - Common variants in vcf.gz files  
   - *annotated.csv file (Annotated file with information of germline and cf variants)  
 **Note**
--Please zip files using bgzip and make index file of each file (except .tab)  
+-Please zip files using bgzip and make index file of each file (except .tab)
+
+# Modified common variant code
+  script :- Modified-common-variants-code.py
+## **Requirements:**  
+  - Python (Pandas,Subprocess,os)  
+  - Bcftools
+## **Input:**  
+  - Path of Somatic folder  
+  - Path of Germline and cf folder
+  - Path of Annotation folder (Somatic)
+  - Extension of Annotation file
+  - Path of Output directory
+## **Output:** 
+  - Common variants in vcf.gz files  
+  - *annotated.csv file (Annotated file with information of germline and cf variants)
