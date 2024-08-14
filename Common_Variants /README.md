@@ -24,6 +24,9 @@ This script automates the analysis of common variants using the vcf files (*.vcf
   - Path of Annotation folder (Somatic)
   - Extension of Annotation file
   - Path of Output directory
+  - 
+![common-var-input](https://github.com/user-attachments/assets/f8df6564-9eb1-4a3d-b85f-d8020e4df5a5)
+
 ## **Output:** 
   - Common variants in vcf.gz files  
   - *annotated.csv file (Annotated file with information of germline and cf variants)
