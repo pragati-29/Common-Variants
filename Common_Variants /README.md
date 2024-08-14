@@ -31,7 +31,7 @@ This script automates the analysis of common variants using the vcf files (*.vcf
       - Compared variant files for both cf-DNA and germline. 
       - *annotated.tsv file (Annotated file with information of germline and cf variants)
       - ![image](https://github.com/user-attachments/assets/6f3197c6-0c40-4020-bf25-519907ad9b4a)
-      - ![image](https://github.com/user-attachments/assets/2d8e381e-4612-4a94-8b51-27f47d9c932d)
+      - ![image](https://github.com/user-attachments/assets/2d8e381e-4612-4a94-8b51-27f47d9c932d) 
 **Note**
 -Please zip files using bgzip and make index file of each file (except .tab)
 
