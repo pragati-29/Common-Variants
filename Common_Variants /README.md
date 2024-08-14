@@ -29,3 +29,5 @@ This script automates the analysis of common variants using the vcf files (*.vcf
 ## **Output:** 
   - Common variants in vcf.gz files  
   - *annotated.csv file (Annotated file with information of germline and cf variants)
+  - ![image](https://github.com/user-attachments/assets/6f3197c6-0c40-4020-bf25-519907ad9b4a)
+
