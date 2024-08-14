@@ -27,7 +27,7 @@ This script automates the analysis of common variants using the vcf files (*.vcf
 ![common-var-input](https://github.com/user-attachments/assets/f8df6564-9eb1-4a3d-b85f-d8020e4df5a5)
 
 ## **Output:** 
-  - Folders of samples 
+  - Folder of samples 
       - Compared variant files for both cf-DNA and germline. 
       - *annotated.tsv file (Annotated file with information of germline and cf variants)
        ![image](https://github.com/user-attachments/assets/6f3197c6-0c40-4020-bf25-519907ad9b4a)
