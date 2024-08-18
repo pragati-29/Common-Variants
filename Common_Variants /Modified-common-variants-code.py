@@ -1,79 +1,93 @@
 import os
-import shutil
 import pandas as pd
 import subprocess
 import argparse
-import errno
-from itertools import  zip_longest
-germ_path = "/media/bioinfoa/bioinfo2/Pragati/Common_Variant/Try/germline"
-som_path = "/media/bioinfoa/bioinfo2/Pragati/Common_Variant/Try/somatic"
-anno_path = "/media/bioinfoa/bioinfo2/Pragati/Common_Variant/Try/anno"
-annotation_file_type = input("Enter the extension of the annotation file:")
-folder_germ = os.listdir(germ_path)
-folder_som = os.listdir(som_path)
-folder_anno = os.listdir(anno_path)
-sample_suffixes = set([file.split('-')[0] for file in folder_germ + folder_som + folder_anno])
-output_base_dir = "/media/bioinfoa/bioinfo2/Pragati/Common_Variant/Try/output"
-# Check
+
+def create_output_dir(output_dir):
+    """Create the output directory if it doesn't exist."""
+    os.makedirs(output_dir, exist_ok=True)
+
 def check_columns(file_anno):
-    required_columns = ['CHROM', 'POS', 'REF','ALT']  # Define the required columns here
+    """Ensure the required columns are present in the annotation file."""
+    required_columns = ['CHROM', 'POS', 'REF', 'ALT']
     missing_columns = [col for col in required_columns if col not in file_anno.columns]
     if missing_columns:
         raise ValueError(f"Missing columns in file: {missing_columns}")
-for tab_file in folder_anno:
-    if annotation_file_type == "csv":
-        file_anno = pd.read_csv(anno_path + "/" +tab_file)
-    elif annotation_file_type == "tsv" or annotation_file_type == "tab":
-        file_anno = pd.read_csv(anno_path + "/" + tab_file, sep='\t')
-    else:
-        raise ValueError(f"Unsupported file type: {tab_file}")
-    #column check
-    check_columns(file_anno)
-# Check if files exist in all folders
-'''for file_g in folder_germ:
-    # Extract the prefix part of the file name
-    prefix = file_g.split('-')[0]
-    print(prefix)
-    # Check if the corresponding file exists in both anno_path and som_path directories
-    if not any(file.startswith(prefix) for file in folder_anno) or not any(file.startswith(prefix) for file in folder_som):
-        raise FileNotFoundError(f"Sample not found in all folders: {prefix}")'''
-# Comparing the somatic and germline files
-try:
-    for som, anno in zip(folder_som, folder_anno):
-      # Load the annotation file once per `anno`
-      annotate_file = os.path.join(anno_path, anno)
-      if annotation_file_type == "csv":
-          file_anno = pd.read_csv(annotate_file, index_col=0)
-      elif annotation_file_type in ["tsv", "tab"]:
-          file_anno = pd.read_csv(annotate_file, sep='\t', index_col=0)
-      for germ in folder_germ:
-          if som.split('-')[0] in germ and som.endswith("vcf.gz") and germ.endswith("vcf.gz"):
-              os.makedirs(os.path.join(output_base_dir, som.split('-')[0]), exist_ok=True)
-              command3 = f"bcftools isec -n +2 {os.path.join(germ_path, germ)} {os.path.join(som_path, som)} | bgzip -c > {output_base_dir}/{som.split('-')[0]}/{germ.split('.')[0]}-{som.split('.')[0]}-compare.vcf.gz"
-              subprocess.run(command3, shell=True, check=True)
-              filename = germ.split('.')[0] + "-" + som.split('.')[0] + "-compare.vcf.gz"
-              # Add 'Present in Germline' column if applicable
-              if '-B' in filename and '-cf' not in filename:
-                  filepath = os.path.join(output_base_dir, germ.split('-')[0], filename)
-                  compared_file = pd.read_csv(filepath, index_col=0, header=None, comment="#", sep="\t")
-                  compared_file.rename(columns={0: 'CHROM', 1: 'POS', 2: 'REF', 3: 'ALT'}, inplace=True)
-                  file_anno['Present in Germline'] = file_anno.apply(
-                      lambda x: 'P' if any((compared_file['POS'] == x['POS']) & (compared_file['REF'] == x['REF']) & (compared_file['ALT'] == x['ALT'])) else 'A',
-                      axis=1
-                  )
-              # Add 'Present in cf' column if applicable
-              if '-B' in filename and '-cf' in filename:
-                  filepath = os.path.join(output_base_dir, germ.split('-')[0], filename)
-                  compared_file = pd.read_csv(filepath, index_col=0, header=None, comment="#", sep="\t")
-                  compared_file.rename(columns={0: 'CHROM', 1: 'POS', 2: 'REF', 3: 'ALT'}, inplace=True)
-                  file_anno['Present in cf'] = file_anno.apply(
-                      lambda x: 'P' if any((compared_file['POS'] == x['POS']) & (compared_file['REF'] == x['REF']) & (compared_file['ALT'] == x['ALT'])) else 'A',
-                      axis=1
-                  )
-      # Save the file after both columns are added (if applicable)
-      output_filepath = os.path.join(output_base_dir, som.split('-')[0], f"{anno.split('.')[0]}-annotated.tsv")
-      file_anno.to_csv(output_filepath, sep='\t')
-      print(f"Saved: {output_filepath}")
 
-except subprocess.CalledProcessError as e:
-    print(f"An error occurred: {e}")
+def load_annotation_file(file_path, file_type):
+    """Load the annotation file based on its type."""
+    if file_type == "csv":
+        return pd.read_csv(file_path)
+    elif file_type in ["tsv", "tab"]:
+        return pd.read_csv(file_path, sep='\t')
+    else:
+        raise ValueError(f"Unsupported file type: {file_type}")
+
+def process_files(germ_path, som_path, anno_path, annotation_file_type, output_base_dir):
+    """Main logic for comparing files and annotating results."""
+    # Create output directory
+    create_output_dir(output_base_dir)
+    
+    # List files in directories
+    folder_germ = os.listdir(germ_path)
+    folder_som = os.listdir(som_path)
+    folder_anno = os.listdir(anno_path)
+    
+    # Iterate through the germline and somatic files
+    for germ in folder_germ:
+        germ_prefix = germ.split('-')[0]
+        corresponding_som = [som for som in folder_som if som.startswith(germ_prefix) and som.endswith("vcf.gz")]
+        corresponding_anno = [anno for anno in folder_anno if anno.startswith(germ_prefix)]
+        
+        if not corresponding_som or not corresponding_anno:
+            print(f"Skipping {germ_prefix} as it does not have corresponding somatic or annotation files.")
+            continue
+        
+        # Assume there is only one matching file for somatic and annotation per germline file
+        som = corresponding_som[0]
+        anno = corresponding_anno[0]
+        
+        sample_output_dir = os.path.join(output_base_dir, germ_prefix)
+        create_output_dir(sample_output_dir)
+        
+        # Load annotation file
+        annotate_file = os.path.join(anno_path, anno)
+        file_anno = load_annotation_file(annotate_file, annotation_file_type)
+        check_columns(file_anno)
+        # Run bcftools isec command
+        #print(output_vcf,sample_output_dir)
+        if germ.endswith('vcf.gz') and germ.split('-')[0] in som:
+            output_vcf = os.path.join(sample_output_dir, f"{germ.split('.')[0]}-{som.split('.')[0]}-compare.vcf.gz")
+            command = f"bcftools isec -n +2 {os.path.join(germ_path, germ)} {os.path.join(som_path, som)} | bgzip -c > {output_vcf}"
+            print(command)
+        subprocess.run(command, shell=True, check=True)
+        for x in os.listdir(sample_output_dir):
+            try: 
+                if '-B' in x and '-cf' not in x: 
+                    new_file= sample_output_dir +"/"+x 
+                    compared_file = pd.read_csv(new_file, index_col=0, header=None, comment="#", sep="\t")
+                    compared_file.rename(columns={0:'CHROM', 1:'POS', 2:'REF', 3:'ALT'}, inplace=True)
+                    file_anno['Present in Germline'] =file_anno.apply(lambda x: 'P' if any((compared_file['POS'] == x['POS']) & (compared_file['REF'] == x['REF']) & (compared_file['ALT'] == x['ALT'])) else 'A', axis=1)
+                if '-B' in x and '-cf' in x:
+                    new_file= sample_output_dir +"/"+x 
+                    compared_file = pd.read_csv(new_file, index_col=0, header=None, comment="#", sep="\t")
+                    compared_file.rename(columns={0:'CHROM', 1:'POS', 2:'REF', 3:'ALT'}, inplace=True)
+                    file_anno['Present in cf'] =file_anno.apply(lambda x: 'P' if any((compared_file['POS'] == x['POS']) & (compared_file['REF'] == x['REF']) & (compared_file['ALT'] == x['ALT'])) else 'A', axis=1)   
+            except:
+                continue
+        file_anno.to_csv(sample_output_dir + '/' + anno.split('.')[0] + '-annotated.csv')    
+        # Save the annotated file
+def main(germ_path, som_path, anno_path, annotation_file_type, output_base_dir):
+    """Main function to execute the workflow."""
+    process_files(germ_path, som_path, anno_path, annotation_file_type, output_base_dir)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Process file paths for germline, somatic, and annotation directories.')
+    parser.add_argument('--germ_path', type=str, required=True, help='Path to the germline directory')
+    parser.add_argument('--som_path', type=str, required=True, help='Path to the somatic directory')
+    parser.add_argument('--anno_path', type=str, required=True, help='Path to the annotation directory')
+    parser.add_argument('--annotation_file_type', type=str, required=True, help='Extension of the annotation file')
+    parser.add_argument('--output_base_dir', type=str, required=True, help='Path to the output directory')
+
+    args = parser.parse_args()
+    main(args.germ_path, args.som_path, args.anno_path, args.annotation_file_type, args.output_base_dir)
