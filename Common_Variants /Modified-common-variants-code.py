@@ -59,7 +59,7 @@ def process_files(germ_path, som_path, anno_path, annotation_file_type, output_b
         if germ.endswith('vcf.gz') and germ.split('-')[0] in som:
             output_vcf = os.path.join(sample_output_dir, f"{germ.split('.')[0]}-{som.split('.')[0]}-compare.vcf.gz")
             command = f"bcftools isec -n +2 {os.path.join(germ_path, germ)} {os.path.join(som_path, som)} | bgzip -c > {output_vcf}"
-            print(command)
+            #print(command)
         subprocess.run(command, shell=True, check=True)
         for x in os.listdir(sample_output_dir):
             try: 
